@@ -1,7 +1,7 @@
 This folder contains the [source code of the lean and mean solver from John Tromp for Cuckatoo](https://github.com/tromp/cuckoo/tree/master/src).
 The [Makefile](Makefile) can be used to create and run the binary files to reproduce the evaluation presented [here](../README.md) for claiming the [bounty offered by John Tromp](https://github.com/tromp/cuckoo?tab=readme-ov-file#linear-time-memory-trade-off-bounty).
 
-##List of all binaries and their parameter used for the evaluation
+### List of all binaries and their parameter used for the evaluation
 
 |Exec. File |Output File |Variant   |Seed|Nonces |Threads |k  |Memory used |Batches |Attempts |$k_{mem}$ |
 |-----------|------------|:--------:|:--:|:-----:|:------:|:-:|:----------:|:------:|:-------:|:--------:|
@@ -116,7 +116,7 @@ Lean solver baseline calculations:
 | lean31x8 | ../eval/data/lean31x8_t8_seed1.out | Cuckatoo31 | 000005eed10000000000...0000 | 0-3 | 8 | 512.0 MiB | 0.250 |
 | lean31x8 | ../eval/data/lean31x8_t8_seed2.out | Cuckatoo31 | 00000000005eed200000...0000 | 0-3 | 8 | 512.0 MiB | 0.250 |
 
-##How to create and run all binary files to reproduce the full evaluation
+### How to create and run all binary files to reproduce the full evaluation
 
 The command
 
@@ -132,7 +132,7 @@ make eval_all
 
 to run these binaries and gather the output in the [data directory](data/). [Jupyter Notebook](https://jupyter.org/) files in the [image directory](../img/) can be run to create the overview graphs and images used in the presentation of the evaluation.
 
-##How to create and run a quick test
+### How to create and run a quick test
 
 Use the command
 
@@ -148,7 +148,7 @@ make run_quick_test
 
 to run the test. Output will not be verbose and results will be piped to the console.
 
-##How to create and run only a part of the evaluation
+### How to create and run only a part of the evaluation
 
 However, running the full evaluation takes quite some time. Therefore, one can create and run only a part of the evaluation by using the following commands. The format of the created executable files is  
 
@@ -215,16 +215,3 @@ or more specific for example (for mean solver targeting Cuckatoo27 using cuda):
 ~~~
 make run_verify_27
 ~~~
-
-
-
-
-<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script>
-    window.MathJax = {
-      tex: {
-        inlineMath: [['$', '$'], ['\\(', '\\)']]
-      }
-    };
-</script>

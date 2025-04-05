@@ -107,11 +107,11 @@ Listing 1 contains already an easy optimization. It includes a trimming step at 
 
 However, this algorithm immediately sparks a couple of points to address:
 
-#### 1. What is with branching?
+### 1. What is with branching?
 
 If there is more than one possible path from a current endnode, would that not mean that the amount of paths / endnodes to store would grow with each step. Only a small growth factor would blow up quickly if raised to the power of 42. Luckily, this is not the case. The [average node degree is 1](#notation-and-useful-facts) and so the amount of endnodes to store stays pretty constant with small variance.
 
-#### 2. What is with running into shorter cycles? 
+### 2. What is with running into shorter cycles? 
 
 Luckily, running into shorter cycles is not a big problem. According to John Tromp for large graphs the expected number of L-cycles is roughly ~1/L.[^13]
 Therefore we expect on average
@@ -119,12 +119,12 @@ $\sum_{i \in \\{2,6,14\\}}{\frac{1}{i}} \approx 0.74$
 potential cycles in a 42 graph, a very small number of (extra) paths; and only cycles of length 2, 6 and 14 (even factors of 42) will end up in the same endnode after 42 steps and therefore present a false-positive result. The chance that we hit one of these cycles with our subset of 1/k starting edges is even lower than hitting a 42-cycle (see [Notation and useful facts](#notation-and-useful-facts)).
 
 
-#### 3. How do we avoid just walking back and forth the same edge?
+### 3. How do we avoid just walking back and forth the same edge?
 
 If we only store the endnodes of our paths then we do not know where we came from and walking back the same edge on the next step would be a possibility. Our average node degree would artificially rise to ~2 and the amount of active paths would blow up quickly. To avoid this, we must keep track of the previous edge (or node), which would increase our memory consumption.
 Luckily, the current implementation of Cuckoo Cycle (termed Cuckatoo) is a so called node-pair-cycle, which means that edges are called consecutive in a cycle, not if they hit the same node, but if their two endnodes differ in the last bit. This nicely avoids our problem of possibly walking forth and back, because now the same edge we came from does not qualify anymore as next edge to walk on.
 
-#### 4. When do we switch to a new graph?
+### 4. When do we switch to a new graph?
 
 In principle, we have the choice to switch to a new cycle after checking the subset of 1/k edges. However, if the subset is very small compared to the total amount of edges N, then it might be beneficial to not directly switch to a new graph but just test the next subset of 1/k edges. We could do this for many such subsets before switching to the next graph (batching). When and if such an approach is beneficial will be addressed in the next section. For now we should simply allow this possibility.
 Batching also allows for another optimization. We can check the potential cycle candidates from the previous batch during the "walk" step of the current batch. This is beneficial because we calculate all edge endnodes anyways during the "walk" step, so we can make double use of these Siphash calculations. However, this means an increase in memory usage as we now need to keep the PathForest structure besides the NodeSet in memory. If the amount of potential cycles is low (high k-facor) this intertwining allows for "hiding" the extra "check" step at the end almost completely. In the next section, we will analyze this in more detail.
@@ -133,7 +133,7 @@ Batching also allows for another optimization. We can check the potential cycle 
 
 In this section, I will first assess if the approach outlined above is (at least in theory) feasible.
 
-#### 1. Amount of Hashes needed
+### 1. Amount of Hashes needed
 
 Let us assume our graph contains a 42-cycle. Then the chance that one particular edge of the cycle is not part of our subset of edges is $1-1/k$. To miss the cycle completely, none of the edges must be part of the subset, so this chance is:
 $(1-\frac{1}{k})^{42}$. Consequently, the chance of finding a cycle if it is there is: $1-(1-\frac{1}{k})^{42}$, or if we use $B$ batches:
@@ -160,7 +160,7 @@ The next graph shows the amount of total hashes needed per k-factor:
 For higher k-factors the relationship is pretty linear with a slope near 1 and an offset near 1000 hashes.
 So, when using half the edges to start with, double the amount of hashes are needed to find 42-cycles. In the next section we will see that the true amount of used memory ($k_{mem}$) depends also linearly on the k-factor (and therefore on the fraction/amount of edges we start with).
 
-#### 2. Amount of Memory needed
+### 2. Amount of Memory needed
 
 Now, let us estimate the amount of memory that this approach uses. In total 4 different data structures are needed. first, a way fo strong the list of edges efficiently is needed. As the edges are always in increasing order and the deltas between edges follow a [Geometric distribution](https://en.wikipedia.org/wiki/Geometric_distribution) with mean $\frac{1}{p} = k$. A [Golomb-Rice code](https://en.wikipedia.org/wiki/Golomb_coding)[^14] comes to mind to store the edges in a compressed way. The expected amount of bits ($R_k$) needed to store an edge is:
 $E(R_k) = b+\frac{1}{1-\alpha^k}$ with $\alpha = (1-p) = (1-\frac{1}{k})$ which is for big k-factors $\approx log_2(k) + 1.58$ ([see here](bitrate_of_golomb_rice.md)).
@@ -183,7 +183,7 @@ The following graph shows the memory in bits/edge vs. k-factor including batchin
 
 It is clear that even for small k-factors less than 1 bit per edge is needed, which is promising.
 
-#### 3. Comparison to lean solver
+### 3. Comparison to lean solver
 
 Combining the results from points 2 and 3, it is now possible to estimate if it is at least theoretically feasible with this approach to break the barrier of the bounty. The lean miner takes $ H_{total,lean} \approx 5.655 \cdot N $ hashes in total (see [useful facts](#notation-and-useful-facts)). The bounty allows to be $ 10k $ slower than the lean solver, so
 
@@ -274,7 +274,7 @@ Clearly, the splean solver approach beats the lean solver as demanded by the bou
 # Conclusion
 
 It is clear that the original idea of Dave Andersen to use a sampling approach combined with some clever use of probabilistic data structures and some engineering can be successfully turned into an implementation that can fulfill the demands of the Linear Time-Memory Trade-Off Bounty set by John Tromp.  
-However, quite some work was needed to really brake the barrier set by the bounty, and this approach only barely improves on this barrier. It shows a ~6-8$k_{mem}$ fold slowdown using $\frac{N}{k_{mem}}$ bits at most when compared to lean solver. This is "only" an improvement of +25% to +33% over the 10fold barrier set by the bounty. It still behaves linear in time vs memory, reducing the amount of memory increases the runtime linearly with a constant of ~6-8.  
+However, quite some work was needed to really brake the barrier set by the bounty, and this approach only barely improves on this barrier. It shows a ~6-8 $k_{mem}$ fold slowdown using $\frac{N}{k_{mem}}$ bits at most when compared to lean solver. This is "only" an improvement of +25% to +33% over the 10fold barrier set by the bounty. It still behaves linear in time vs memory, reducing the amount of memory increases the runtime linearly with a constant of ~6-8.  
 This approach is also quite fragile. If, for example, not the ASIC friendly node-pairing approach would be used, the memory demand would be substantially higher to avoid walking forth and back the same edge over and over again in the "walking" step ([see](#3-how-do-we-avoid-just-walking-back-and-forth-the-same-edge)). It also crucially relies on the fact that the node degree is 1. If the amount of nodes vs. edges would be slightly shifted away from $\frac{M}{N} = 1$ on each side to strictly less than 1. The amount of endnodes to store would grow very fast even for a small increase in the node degree (because it will be nearly raised to the power of the proof size, here 42).  
 I am not an expert in ASIC design, so I cannot judge if this approach can be used to design an ASIC that is more efficient compared to what is on the market at the moment. Judging on what the impact would be and if the approach here can be adapted efficiently to other variants of the Cuckoo Cycle problem is beyond the scope of this study, but I would be happy to engage in a conversation.  
 I would like to conclude with some words on why I engaged into this endeavor. I really like the Cuckoo Cycle problem and the contribution by John Tromp and others to the crypto currency community! I like the idea of a graph-theoretical problem as Proof-Of-Work algorithm and I liked the approach of the Grin community so far. All this let me dive deep into the details and finally let me discover and put the pieces together to solve the quest posed by this bounty. I hope that this contribution will help to better understand the Cuckoo Cycle PoW and to improve and secure the crypto currencies linked to it.
@@ -303,14 +303,14 @@ The average node degree is therefore: $E(d) = 1$ and the variance is $Var(d) = 1
 $s = 1-(1-\frac{1}{k})^L$, if such cycle exists in the graph.
 
 - Expected number $c$ of $L$-cycles in a Cuckoo graph is $~1/L$ for large numbers of edges $N$ and comparable small cycles $L$, or more precisely[^13]:  
-$\frac{1}{L}\frac{N^\underline{L}}{N^L}\frac{(N^\underline{\frac{L}{2}})^2}{N^L}$ with $N^\underline{L} = N(N-1)\dots(N-L+1)$
+$\frac{1}{L}\frac{N^{\underline{L}}}{N^L}\frac{(N^{\underline{\frac{L}{2}}})^2}{N^L}$ with $N^{\underline{L}} = N(N-1)\dots(N-L+1)$
 
 - Assuming that the lean solver approach needs two Siphash calculations in each round per edge alive , one in the marking/counting step and one in the second trimming part. Then the Cuckoo conjecture[^8] can be used to calculate the total number of needed Siphashes, which seems to converge to ~5.655 hashes/edge in this case.
 
 ### Footnotes
 
 [^1]: It took me a while to find back the original source. I got my initial idea from reading an article on Dave Andersen’s blog: [A Public Review of Cuckoo Cycle from March 31, 2014][2], where he wrote very at the end:  
-    > There may be further progress to be made on this. In particular, cycles in graphs seem very likely to yield to sampling-based approaches. Consider, e.g., a 42-cycle: A sampling of 10% of the edges in the graph is extremely likely to contain at least one of the edges in the 42 cycle. One might be able to use this as a starting point to solve Cuckoo Cycle in sublinear memory. I haven't thought enough about it, but it's where I'd go next.
+> There may be further progress to be made on this. In particular, cycles in graphs seem very likely to yield to sampling-based approaches. Consider, e.g., a 42-cycle: A sampling of 10% of the edges in the graph is extremely likely to contain at least one of the edges in the 42 cycle. One might be able to use this as a starting point to solve Cuckoo Cycle in sublinear memory. I haven't thought enough about it, but it's where I'd go next.
 
 [^8]: The Cuckoo Cycle Conjecture[^12]: 
 > The fraction $f_i$ of remaining edges after $i$ trimming rounds (in the limit of $N$ goes to infinity) appears to obey: $f_i = {a_i-1} * a_i$, where $a_{-i} = a_0 = 1$, and $a_{i+1} = 1 - e^{-a_i}$. 
@@ -350,14 +350,3 @@ $\frac{1}{L}\frac{N^\underline{L}}{N^L}\frac{(N^\underline{\frac{L}{2}})^2}{N^L}
 [4]: https://github.com/tromp/cuckoo/blob/master/doc/spec
 [5]: https://github.com/tromp/cuckoo/blob/master/doc/mathspec
 [6]: https://raw.githubusercontent.com/tromp/cuckoo/refs/heads/master/doc/cuckoo.pdf
-
-
-<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script>
-    window.MathJax = {
-      tex: {
-        inlineMath: [['$', '$'], ['\\(', '\\)']]
-      }
-    };
-</script>

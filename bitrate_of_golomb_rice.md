@@ -71,13 +71,3 @@ and for large numbers $2^b$, with the definition of the [$\exp$-function](https:
 
 $ E(R_b) \approx b + \frac{1}{1-e^{-1}} \approx b + 1.58$
 
-<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script>
-    window.MathJax = {
-      tex: {
-        inlineMath: [['$', '$'], ['\\(', '\\)']]
-      }
-    };
-</script>
-
