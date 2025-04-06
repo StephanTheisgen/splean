@@ -301,11 +301,11 @@ $\frac{1}{L}\frac{N^{\underline{L}}}{N^L}\frac{(N^{\underline{\frac{L}{2}}})^2}{
 
 ### Footnotes
 
-[^1]: It took me a while to find back the original source. I got my initial idea from reading an article on Dave Andersen’s blog: [A Public Review of Cuckoo Cycle from March 31, 2014][2], where he wrote very at the end:  
-> There may be further progress to be made on this. In particular, cycles in graphs seem very likely to yield to sampling-based approaches. Consider, e.g., a 42-cycle: A sampling of 10% of the edges in the graph is extremely likely to contain at least one of the edges in the 42 cycle. One might be able to use this as a starting point to solve Cuckoo Cycle in sublinear memory. I haven't thought enough about it, but it's where I'd go next.
+[^1]: It took me a while to find back the original source. I got my initial idea from reading an article on Dave Andersen’s blog: [A Public Review of Cuckoo Cycle from March 31, 2014][2], where he wrote very at the end:
+ > There may be further progress to be made on this. In particular, cycles in graphs seem very likely to yield to sampling-based approaches. Consider, e.g., a 42-cycle: A sampling of 10% of the edges in the graph is extremely likely to contain at least one of the edges in the 42 cycle. One might be able to use this as a starting point to solve Cuckoo Cycle in sublinear memory. I haven't thought enough about it, but it's where I'd go next.
 
 [^8]: The Cuckoo Cycle Conjecture[^12]: 
-> The fraction $f_i$ of remaining edges after $i$ trimming rounds (in the limit of $N$ goes to infinity) appears to obey: $f_i = {a_i-1} * a_i$, where $a_{-i} = a_0 = 1$, and $a_{i+1} = 1 - e^{-a_i}$. 
+ > The fraction $f_i$ of remaining edges after $i$ trimming rounds (in the limit of $N$ goes to infinity) appears to obey: $f_i = {a_i-1} * a_i$, where $a_{-i} = a_0 = 1$, and $a_{i+1} = 1 - e^{-a_i}$. 
 
 [^5]: the key is derived from hashing a blockchain header and a nonce
 
