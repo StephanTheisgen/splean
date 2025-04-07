@@ -286,7 +286,7 @@ eval_splean31x8_k13 := $(addprefix eval_splean31x8_k13_t,$(nthreads))
 eval_splean31x8_k14 := $(addprefix eval_splean31x8_k14_t,$(nthreads))
 
 #eval_splean31x8: $(eval_splean31x8_k10) $(eval_splean31x8_k11) $(eval_splean31x8_k12) $(eval_splean31x8_k13) $(eval_splean31x8_k14)
-eval_splean31x8: $(eval_splean31x8_k11) $(eval_splean31x8_k10)
+eval_splean31x8: $(eval_splean31x8_k10)
 
 $(eval_splean31x8_k10): eval_splean31x8_k10_t%:
 	./splean31x8_k10_t$* -r $(runs) -x $(seed0) > data/splean31x8_k10_t$*_seed0.out
@@ -361,14 +361,14 @@ run_quick_test_splean:
 run_quick_test:	run_quick_test_bl run_quick_test_splean
 
 cont1:
-#	./splean31x8_k12_t4 -r $(runs) -x $(seed0) > data/splean31x8_k12_t4_seed0.out
-#	./splean31x8_k12_t4 -r $(runs) -x $(seed1) > data/splean31x8_k12_t4_seed1.out
-#	./splean31x8_k12_t4 -r $(runs) -x $(seed2) > data/splean31x8_k12_t4_seed2.out
-#	./splean31x8_k12_t2 -r $(runs) -x $(seed0) > data/splean31x8_k12_t2_seed0.out
-#	./splean31x8_k12_t2 -r $(runs) -x $(seed1) > data/splean31x8_k12_t2_seed1.out
-#	./splean31x8_k12_t2 -r $(runs) -x $(seed2) > data/splean31x8_k12_t2_seed2.out
-#	./splean31x8_k12_t1 -r $(runs) -x $(seed0) > data/splean31x8_k12_t1_seed0.out
-	./splean31x8_k12_t1 -r $(runs) -x $(seed1) > data/splean31x8_k12_t1_seed1.out
-	./splean31x8_k12_t1 -r $(runs) -x $(seed2) > data/splean31x8_k12_t1_seed2.out
+#	./splean31x8_k11_t4 -r $(runs) -x $(seed0) > data/splean31x8_k11_t4_seed0.out
+	./splean31x8_k11_t4 -r $(runs) -x $(seed1) > data/splean31x8_k11_t4_seed1.out
+	./splean31x8_k11_t4 -r $(runs) -x $(seed2) > data/splean31x8_k11_t4_seed2.out
+	./splean31x8_k11_t2 -r $(runs) -x $(seed0) > data/splean31x8_k11_t2_seed0.out
+	./splean31x8_k11_t2 -r $(runs) -x $(seed1) > data/splean31x8_k11_t2_seed1.out
+	./splean31x8_k11_t2 -r $(runs) -x $(seed2) > data/splean31x8_k11_t2_seed2.out
+	./splean31x8_k11_t1 -r $(runs) -x $(seed0) > data/splean31x8_k11_t1_seed0.out
+	./splean31x8_k11_t1 -r $(runs) -x $(seed1) > data/splean31x8_k11_t1_seed1.out
+	./splean31x8_k11_t1 -r $(runs) -x $(seed2) > data/splean31x8_k11_t1_seed2.out
 	
 continue: cont1 eval_splean31x8
