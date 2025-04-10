@@ -60,19 +60,22 @@ lean31x8:	threads/barrier.hpp crypto/siphash.hpp cuckatoo/cuckatoo.h  cuckatoo/b
 
 # create mean cuda miner to find cycles quickly as test set for evaluation
 
-verify: mean27cu mean29cu lean31cu
+verify: mean27cu mean29cu mean31cu lean31cu
 
 mean27cu:	crypto/siphash.cuh cuckatoo/mean.cu Makefile
-	$(NVCC) -o $@ -DEDGEBITS=27 -arch sm_75 cuckatoo/mean.cu $(BLAKE_2B_SRC)
+	$(NVCC) -o $@ -DEDGEBITS=27 -arch sm_75 cuckatoo/mean.cu $(BLAKE_2B_SRC) -DBUCKBITS=10
 
 mean29cu:	crypto/siphash.cuh cuckatoo/mean.cu Makefile
-	$(NVCC) -o $@ -DEDGEBITS=29 -arch sm_75 cuckatoo/mean.cu $(BLAKE_2B_SRC)
+	$(NVCC) -o $@ -DEDGEBITS=29 -arch sm_75 cuckatoo/mean.cu $(BLAKE_2B_SRC) -DBUCKBITS=11
+
+mean31cu:	crypto/siphash.cuh cuckatoo/mean.cu Makefile
+	$(NVCC) -o $@ -DEDGEBITS=31 -arch sm_75 cuckatoo/mean.cu $(BLAKE_2B_SRC) -DBUCKBITS=12
 
 lean31cu:	crypto/siphash.cuh cuckatoo/lean.cu Makefile
 	$(NVCC) -o $@ -DEDGEBITS=31 -arch sm_75 cuckatoo/lean.cu $(BLAKE_2B_SRC)
 
 	
-# create splean miner programs for n [27, 29, 31] with [1,2,4,8] threads and targeted reduction factor k [9, 10, 11, 12, 13, 14, 15, 16]
+# create splean miner programs for n [27, 29, 31] with [1,2,4,8] threads and targeted reduction factor k [10, 11, 12, 13, 14, 15, 16]
 
 splean: splean27x8 splean29x8 splean31x8
 
@@ -130,16 +133,18 @@ $(splean29x8_k14): splean29x8_k14_t%:	../src/splean.cpp ../src/splean.hpp ../src
 	
 # loop to create versions with different number of threads for splean31x8
 
-splean31x8_k10 := $(addprefix splean31x8_k10_t,$(nthreads))
+#splean31x8_k10 := $(addprefix splean31x8_k10_t,$(nthreads))
 splean31x8_k11 := $(addprefix splean31x8_k11_t,$(nthreads))
 splean31x8_k12 := $(addprefix splean31x8_k12_t,$(nthreads))
 splean31x8_k13 := $(addprefix splean31x8_k13_t,$(nthreads))
 splean31x8_k14 := $(addprefix splean31x8_k14_t,$(nthreads))
+splean31x8_k15 := $(addprefix splean31x8_k15_t,$(nthreads))
 
-splean31x8: $(splean31x8_k10) $(splean31x8_k11) $(splean31x8_k12) $(splean31x8_k13) $(splean31x8_k14)
+#splean31x8:  $(splean31x8_k10) $(splean31x8_k11) $(splean31x8_k12) $(splean31x8_k13) $(splean31x8_k14)
+splean31x8: $(splean31x8_k11) $(splean31x8_k12) $(splean31x8_k13) $(splean31x8_k14) $(splean31x8_k15)
 
-$(splean31x8_k10): splean31x8_k10_t%:	../src/splean.cpp ../src/splean.hpp ../src/hashmap.hpp ../src/bloom.hpp ../src/rice.hpp ../src/helper.hpp ../src/siphash.hpp Makefile
-	$(GPP) -o $@ -mavx2 -fno-strict-aliasing ../src/splean.cpp $(BLAKE_2B_SRC) -DEDGE_BITS=31 -DNSIPHASH=8 -DNTHREADS=$* -DKFACTLOG=10 -DNBATCHES=4 -DMAX_CYCLES=4096 -DBFS_LINK_BITS=19 -DVERBOSE
+#$(splean31x8_k10): splean31x8_k10_t%:	../src/splean.cpp ../src/splean.hpp ../src/hashmap.hpp ../src/bloom.hpp ../src/rice.hpp ../src/helper.hpp ../src/siphash.hpp Makefile
+#	$(GPP) -o $@ -mavx2 -fno-strict-aliasing ../src/splean.cpp $(BLAKE_2B_SRC) -DEDGE_BITS=31 -DNSIPHASH=8 -DNTHREADS=$* -DKFACTLOG=10 -DNBATCHES=4 -DMAX_CYCLES=4096 -DBFS_LINK_BITS=19 -DVERBOSE
 
 $(splean31x8_k11): splean31x8_k11_t%:	../src/splean.cpp ../src/splean.hpp ../src/hashmap.hpp ../src/bloom.hpp ../src/rice.hpp ../src/helper.hpp ../src/siphash.hpp Makefile
 	$(GPP) -o $@ -mavx2 -fno-strict-aliasing ../src/splean.cpp $(BLAKE_2B_SRC) -DEDGE_BITS=31 -DNSIPHASH=8 -DNTHREADS=$* -DKFACTLOG=11 -DNBATCHES=4 -DMAX_CYCLES=2048 -DBFS_LINK_BITS=18 -DVERBOSE
@@ -153,6 +158,9 @@ $(splean31x8_k13): splean31x8_k13_t%:	../src/splean.cpp ../src/splean.hpp ../src
 $(splean31x8_k14): splean31x8_k14_t%:	../src/splean.cpp ../src/splean.hpp ../src/hashmap.hpp ../src/bloom.hpp ../src/rice.hpp ../src/helper.hpp ../src/siphash.hpp Makefile
 	$(GPP) -o $@ -mavx2 -fno-strict-aliasing ../src/splean.cpp $(BLAKE_2B_SRC) -DEDGE_BITS=31 -DNSIPHASH=8 -DNTHREADS=$* -DKFACTLOG=14 -DNBATCHES=4 -DMAX_CYCLES=256 -DBFS_LINK_BITS=15 -DVERBOSE
 
+$(splean31x8_k15): splean31x8_k15_t%:	../src/splean.cpp ../src/splean.hpp ../src/hashmap.hpp ../src/bloom.hpp ../src/rice.hpp ../src/helper.hpp ../src/siphash.hpp Makefile
+	$(GPP) -o $@ -mavx2 -fno-strict-aliasing ../src/splean.cpp $(BLAKE_2B_SRC) -DEDGE_BITS=31 -DNSIPHASH=8 -DNTHREADS=$* -DKFACTLOG=15 -DNBATCHES=4 -DMAX_CYCLES=128 -DBFS_LINK_BITS=14 -DWALKFLT_SIZE=4587520 -DVERBOSE #70 bit per item in "walk" filter
+	
 # make all
 
 all: baseline verify splean
@@ -193,19 +201,22 @@ $(eval_bl_31): eval_bl_31_t%:
 run_verify: run_verify_27 run_verify_29 run_verify_31
 
 run_verify_27:
-	./mean27cu -r 32000 -h $(seed0) > data/verify_mean27cu_seed0.out
-	./mean27cu -r 32000 -h $(seed1) > data/verify_mean27cu_seed1.out
-	./mean27cu -r 32000 -h $(seed2) > data/verify_mean27cu_seed2.out
+	./mean27cu -r 24000 -h $(seed0) > data/verify_mean27cu_seed0.out
+	./mean27cu -r 24000 -h $(seed1) > data/verify_mean27cu_seed1.out
+	./mean27cu -r 24000 -h $(seed2) > data/verify_mean27cu_seed2.out
 
 run_verify_29:
-	./mean29cu -r 32000 -h $(seed0) > data/verify_mean29cu_seed0.out
-	./mean29cu -r 32000 -h $(seed1) > data/verify_mean29cu_seed1.out
-	./mean29cu -r 32000 -h $(seed2) > data/verify_mean29cu_seed2.out
+	./mean29cu -r 24000 -h $(seed0) > data/verify_mean29cu_seed0.out
+	./mean29cu -r 24000 -h $(seed1) > data/verify_mean29cu_seed1.out
+	./mean29cu -r 24000 -h $(seed2) > data/verify_mean29cu_seed2.out
 
 run_verify_31:
-	./mean31cu -r 32000 -h $(seed0) > data/verify_mean31cu_seed0.out
-	./mean31cu -r 32000 -h $(seed1) > data/verify_mean31cu_seed1.out
-	./mean31cu -r 32000 -h $(seed2) > data/verify_mean31cu_seed2.out
+	./mean31cu -r 24000 -h $(seed0) > data/verify_mean31cu_seed0.out
+	./mean31cu -r 24000 -h $(seed1) > data/verify_mean31cu_seed1.out
+	./mean31cu -r 24000 -h $(seed2) > data/verify_mean31cu_seed2.out
+#	./lean31cu -r 32000 -h $(seed0) > data/verify_lean31cu_seed0.out
+#	./lean31cu -r 32000 -h $(seed1) > data/verify_lean31cu_seed1.out
+#	./lean31cu -r 32000 -h $(seed2) > data/verify_lean31cu_seed2.out	
 
 # run evaluation for splean27x8
 
@@ -279,19 +290,20 @@ $(eval_splean29x8_k14): eval_splean29x8_k14_t%:
 	
 # run evaluation for splean31x8
 
-eval_splean31x8_k10 := $(addprefix eval_splean31x8_k10_t,$(nthreads))
+#eval_splean31x8_k10 := $(addprefix eval_splean31x8_k10_t,$(nthreads))
 eval_splean31x8_k11 := $(addprefix eval_splean31x8_k11_t,$(nthreads))
 eval_splean31x8_k12 := $(addprefix eval_splean31x8_k12_t,$(nthreads))
 eval_splean31x8_k13 := $(addprefix eval_splean31x8_k13_t,$(nthreads))
 eval_splean31x8_k14 := $(addprefix eval_splean31x8_k14_t,$(nthreads))
+eval_splean31x8_k15 := $(addprefix eval_splean31x8_k15_t,$(nthreads))
 
 #eval_splean31x8: $(eval_splean31x8_k10) $(eval_splean31x8_k11) $(eval_splean31x8_k12) $(eval_splean31x8_k13) $(eval_splean31x8_k14)
-eval_splean31x8: $(eval_splean31x8_k10)
+eval_splean31x8: $(eval_splean31x8_k11) $(eval_splean31x8_k12) $(eval_splean31x8_k13) $(eval_splean31x8_k14) $(eval_splean31x8_k15)
 
-$(eval_splean31x8_k10): eval_splean31x8_k10_t%:
-	./splean31x8_k10_t$* -r $(runs) -x $(seed0) > data/splean31x8_k10_t$*_seed0.out
-	./splean31x8_k10_t$* -r $(runs) -x $(seed1) > data/splean31x8_k10_t$*_seed1.out
-	./splean31x8_k10_t$* -r $(runs) -x $(seed2) > data/splean31x8_k10_t$*_seed2.out
+#$(eval_splean31x8_k10): eval_splean31x8_k10_t%:
+#	./splean31x8_k10_t$* -r $(runs) -x $(seed0) > data/splean31x8_k10_t$*_seed0.out
+#	./splean31x8_k10_t$* -r $(runs) -x $(seed1) > data/splean31x8_k10_t$*_seed1.out
+#	./splean31x8_k10_t$* -r $(runs) -x $(seed2) > data/splean31x8_k10_t$*_seed2.out
 
 $(eval_splean31x8_k11): eval_splean31x8_k11_t%:
 	./splean31x8_k11_t$* -r $(runs) -x $(seed0) > data/splean31x8_k11_t$*_seed0.out
@@ -313,6 +325,11 @@ $(eval_splean31x8_k14): eval_splean31x8_k14_t%:
 	./splean31x8_k14_t$* -r $(runs) -x $(seed1) > data/splean31x8_k14_t$*_seed1.out
 	./splean31x8_k14_t$* -r $(runs) -x $(seed2) > data/splean31x8_k14_t$*_seed2.out
 
+$(eval_splean31x8_k15): eval_splean31x8_k15_t%:
+	./splean31x8_k15_t$* -r $(runs) -x $(seed0) > data/splean31x8_k15_t$*_seed0.out
+	./splean31x8_k15_t$* -r $(runs) -x $(seed1) > data/splean31x8_k15_t$*_seed1.out
+	./splean31x8_k15_t$* -r $(runs) -x $(seed2) > data/splean31x8_k15_t$*_seed2.out
+	
 # run splean miner evaluation
 
 eval: eval_splean27x8 eval_splean29x8 eval_splean31x8
@@ -359,16 +376,3 @@ run_quick_test_splean:
 	./quick_splean31x8_k14_t1
 	
 run_quick_test:	run_quick_test_bl run_quick_test_splean
-
-cont1:
-#	./splean31x8_k11_t4 -r $(runs) -x $(seed0) > data/splean31x8_k11_t4_seed0.out
-	./splean31x8_k11_t4 -r $(runs) -x $(seed1) > data/splean31x8_k11_t4_seed1.out
-	./splean31x8_k11_t4 -r $(runs) -x $(seed2) > data/splean31x8_k11_t4_seed2.out
-	./splean31x8_k11_t2 -r $(runs) -x $(seed0) > data/splean31x8_k11_t2_seed0.out
-	./splean31x8_k11_t2 -r $(runs) -x $(seed1) > data/splean31x8_k11_t2_seed1.out
-	./splean31x8_k11_t2 -r $(runs) -x $(seed2) > data/splean31x8_k11_t2_seed2.out
-	./splean31x8_k11_t1 -r $(runs) -x $(seed0) > data/splean31x8_k11_t1_seed0.out
-	./splean31x8_k11_t1 -r $(runs) -x $(seed1) > data/splean31x8_k11_t1_seed1.out
-	./splean31x8_k11_t1 -r $(runs) -x $(seed2) > data/splean31x8_k11_t1_seed2.out
-	
-continue: cont1 eval_splean31x8

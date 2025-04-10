@@ -14,5 +14,5 @@ GCC ?= gcc $(GCC_ARCH_FLAGS) -std=gnu11 $(CFLAGS)
 BLAKE_2B_SRC ?= blake2b-ref.c
 NVCC ?= nvcc -std=c++11
 
-splean27x8_k9_t8:	splean.cpp splean.hpp hashmap.hpp bloom.hpp rice.hpp helper.hpp siphash.hpp Makefile
-	$(GPP) -o $@ -mavx2 -fno-strict-aliasing splean.cpp $(BLAKE_2B_SRC) -DEDGE_BITS=27 -DNSIPHASH=8 -DNTHREADS=8 -DKFACTLOG=9 -DNBATCHES=1 -DMAX_CYCLES=1024 -DBFS_LINK_BITS=18
+splean27x8_k14_t8: splean.cpp splean.hpp hashmap.hpp bloom.hpp rice.hpp helper.hpp siphash.hpp Makefile
+	$(GPP) -o $@ -mavx2 -fno-strict-aliasing splean.cpp $(BLAKE_2B_SRC) -DEDGE_BITS=27 -DNSIPHASH=8 -DNTHREADS=8 -DKFACTLOG=14 -DNBATCHES=4 -DMAX_CYCLES=16 -DBFS_LINK_BITS=11

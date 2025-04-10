@@ -17,7 +17,7 @@ If you are interested in the details, please go on reading. I have structured th
 In 2015 John Tromp introduced the first [graph-theoretical Proof-Of-Work (PoW) system][6], by proposing the Cuckoo Cycle problem[^2].
 Cuckoo Cycle is immune to quantum speedup by Grover's search algorithm, memory bound, and yet offers nearly instant verification[^3]. It is also a very simple PoW, with a 42-line [complete specification in C][4] and a 13-line [mathematical description][5]. Cuckoo Cycle's challenge is to find a cycle of length L in a random bipartite graph with average degree 1. The reason for calling the resulting PoW Cuckoo Cycle is that inserting items into a Cuckoo hashtable[^4] naturally leads to cycle formation in random bipartite graphs.
 
-The graph is created by a keyed hash function[^5], which maps an edge index and partition side (0 or 1) to the edge endpoint on that side. This makes verification trivial: derive the key of the hash function from the header, compute the 2xL edge endpoints (2xL hashes needed) and make sure that you come back to the starting edge only after traversing L edges. While verification is easy, finding an L-cycle is not. Cycles of length L occur with frequency approximately 1/L.[^2]
+The graph is created by a keyed hash function[^9], which maps an edge index and partition side (0 or 1) to the edge endpoint on that side. This makes verification trivial: derive the key of the hash function from the header, compute the 2xL edge endpoints (2xL hashes needed) and make sure that you come back to the starting edge only after traversing L edges. While verification is easy, finding an L-cycle is not. Cycles of length L occur with frequency approximately 1/L.[^2]
 
 John Tromp proposed to use Siphash-2-4 as the hash function for mapping edges to nodes and a cycle length of 42.[^5] He also presented two different algorithms to solve the Cuckoo Cycle PoW, called "lean" and "mean".[^5]
 
@@ -198,7 +198,7 @@ How this theoretical assessment can be transferred into a real implementation wh
 
 The specific implementation in C++ is described in more detail [here](src/README.md). However, In this section, I want to explain a little more on the higher level decisions made in the development process. Especially, I would like to highlight the discrepancies between reality and theory. The most important data structure is the probabilistic set filter and in the theoretical assessment above it looks like a Cuckoo filter is a good choice, at least a better choice than a Bloom filter. I tried very hard because I simply liked the idea of beating the Cuckoo Cycle problem by using a Cuckoo filter. However, in practice this turned out to be tricky. First the classical Cuckoo filter uses a filter size which is a power of 2. In this context that is particular problematic as the amount of nodes to store after the trimming step is $\approx 0.63\frac{N}{k}$ which is just a little bigger then a power of 2 (if N and k are powers of 2), and therefore the benefits of the initial "trimming" step would be lost. Without it the runtime is only a tiny bit better than needed. I tried to use variants that do not rely on a power of 2 or use a batch size which is not a power of 2, but this turned out to be very inconvenient and not robust enough to reliably beat the barrier. Additionally, it is not easy to efficiently implement a thread-safe and lock-free version needed to fulfill the bounty request of beating the barrier using 1,2,4 and 8 threads.  
 Besides this, it turned out that probably the amount of memory accesses is more relevant than the amount of hash function calculations. The lean solver needs 2 random memory accesses to the node map to mark and check each node for trimming. If we use a Cuckoo filter, we also need on average 2 random memory accesses per step. We need to check if a node is in the set and therefore on average at least 2 locations need to be probed when using a Cuckoo filter. On the other hand, the Cuckoo filter has the advantage of a stable false-positive rate (independent of the filling factor) and can easily be extended to a counting filter, useful in the "trimming" phase, where we need a flag to indicate if a node is paired.  
-A Bloom filter, especially a blocked Bloom filter, ideally optimized for SIMD instructions, having all blocks together in one cache line, would only need 1 memory access on average. In practice this turned out to be very beneficial. Here, I use an implementation based on code from Apache Impala and its version from here: [https://github.com/peterboncz/bloomfilter-repro/blob/master/src/simd-block.h](https://github.com/peterboncz/bloomfilter-repro/blob/master/src/simd-block.h). It is also easy to make it thread-safe and non-blocking. However, to keep the tight bounds on the false-positive rate during the "walk" phase, it was necessary to use an extensive amount of bits per node, more than 60 bits/item are needed and with some safety margin the current implementation uses 64 bits/node. Although this is nearly 3fold increase in memory usage the results are still much better than with a Cuckoo filter.  
+A Bloom filter, especially a blocked Bloom filter, ideally optimized for SIMD instructions, having all blocks together in one cache line, would only need 1 memory access on average. In practice this turned out to be very beneficial. Here, I use an implementation based on code from Apache Impala and its version from [here](https://github.com/peterboncz/bloomfilter-repro/blob/master/src/simd-block.h). It is also easy to make it thread-safe and non-blocking. However, to keep the tight bounds on the false-positive rate during the "walk" phase, it was necessary to use an extensive amount of bits per node, more than 60 bits/item are needed and with some safety margin the current implementation uses 64 bits/node. Although this is nearly 3fold increase in memory usage the results are still much better than with a Cuckoo filter.  
 For the "trimming" phase there is also a filter structure needed. However, here an extra flag is needed if a node is paired. For simplicity, I used here 2 blocked Bloom filters of the same type as for the "walk" phase but only with half the size. This works because a much higher false-positive rate can be tolerated in this phase.  
 As already mentioned, to store the edges, a Golomb-Rice stream is used. Edges are always traversed in order and the distances from one edge to the next one that needs to be stored follow a Geometric distribution. Therefore a Golomb code is ideal and easy to implement, especially when using the Rice version where the Golomb parameter is a power of 2. This is true in our case, because we use a fraction of the edges which is a power of 2, so the Rice parameter ($log_2$ of the Golomb parameter) is simply the k-factor.  
 To store the leave nodes during the "check" phase a simple multi-hashmap is used with linear probing as open addressing method. It needed some tweaking to find a good size parameter to keep the average costs of look-up and store small enough while maintaining a reasonable small size. If batching is not used this is much less critical. The forest/tree structure that stores the edge paths during the "check" phase also needed some optimization, but is not very innovative. One needs to store all edges efficiently enough to not influence the memory consumption significantly if batching is used.  
@@ -228,22 +228,21 @@ The following table summarizes the different setups used to test and validate th
 
 |Variant   | Seeds, Nonces |Threads |k    |Memory used |Batches |Attempts  |$k_{mem}$ |
 |:--------:|:-------------:|:------:|:---:|:----------:|:------:|:--------:|:--------:|
-| Cuckatoo27 | 3, 0-4 | 1,2,4,8 | 9 | 3.6 MiB - 3.6 MiB | 1 | 12.69 | 4.39 - 4.39 |
-| Cuckatoo27 | 3, 0-4 | 1,2,4,8 | 10 | 1.4 MiB - 1.4 MiB | 1 | 24.87 | 11.64 - 11.60 |
-| Cuckatoo27 | 3, 0-4 | 1,2,4,8 | 11 | 716.1 KiB - 718.4 KiB | 1 | 49.25 | 22.88 - 22.81 |
-| Cuckatoo27 | 3, 0-4 | 1,2,4,8 | 12 | 414.1 KiB - 415.3 KiB | 8 | 12.69 | 39.56 - 39.45 |
-| Cuckatoo27 | 3, 0-4 | 1,2,4,8 | 13 | 235.1 KiB - 235.8 KiB | 8 | 24.87 | 69.69 - 69.49 |
-| Cuckatoo27 | 3, 0-4 | 1,2,4,8 | 14 | 144.1 KiB - 144.5 KiB | 8 | 49.25 | 113.69 - 113.36 |
-| Cuckatoo29 | 3, 0-4 | 1,2,4,8 | 9 | 14.6 MiB - 14.6 MiB | 1 | 12.69 | 4.39 - 4.39 |
-| Cuckatoo29 | 3, 0-4 | 1,2,4,8 | 10 | 5.5 MiB - 5.5 MiB | 1 | 24.87 | 11.64 - 11.60 |
-| Cuckatoo29 | 3, 0-4 | 1,2,4,8 | 11 | 2.8 MiB - 2.8 MiB | 1 | 49.25 | 22.88 - 22.81 |
-| Cuckatoo29 | 3, 0-4 | 1,2,4,8 | 12 | 1.8 MiB - 1.8 MiB | 8 | 12.69 | 35.31 - 35.22 |
-| Cuckatoo29 | 3, 0-4 | 1,2,4,8 | 13 | 940.1 KiB - 942.4 KiB | 8 | 24.87 | 69.71 - 69.54 |
-| Cuckatoo29 | 3, 0-4 | 1,2,4,8 | 14 | 476.1 KiB - 477.3 KiB | 8 | 49.25 | 137.65 - 137.29 |
-| Cuckatoo31 | 3, 0-4 | 1,2,4,8 | 9 | 58.3 MiB - 58.3 MiB | 1 | 12.69 | 4.39 - 4.39 |
-| Cuckatoo31 | 3, 0-4 | 1,2,4,8 | 10 | 22.0 MiB - 22.1 MiB | 1 | 24.87 | 11.64 - 11.60 |
-| Cuckatoo31 | 3, 0-4 | 1,2,4,8 | 11 | 11.2 MiB - 11.2 MiB | 1 | 49.25 | 22.88 - 22.81 |
-| Cuckatoo31 | 3, 0-4 | 1,2,4,8 | 12 | 7.3 MiB - 7.3 MiB | 8 | 12.69 | 35.23 - 35.23 |
+| Cuckatoo27 | 3, 0-4 | 1,2,4,8 | 10 | 1.6 MiB - 1.6 MiB | 4 | 6.60 | 9.87 - 9.84 |
+| Cuckatoo27 | 3, 0-4 | 1,2,4,8 | 11 | 842.1 KiB - 844.2 KiB | 4 | 12.69 | 19.46 - 19.41 |
+| Cuckatoo27 | 3, 0-4 | 1,2,4,8 | 12 | 427.1 KiB - 428.2 KiB | 4 | 24.87 | 38.36 - 38.26 |
+| Cuckatoo27 | 3, 0-4 | 1,2,4,8 | 13 | 216.6 KiB - 217.2 KiB | 4 | 49.25 | 75.64 - 75.43 |
+| Cuckatoo27 | 3, 0-4 | 1,2,4,8 | 14 | 109.9 KiB - 110.2 KiB | 4 | 98.01 | 149.14 - 148.65 |
+| Cuckatoo29 | 3, 0-4 | 1,2,4,8 | 10 | 6.5 MiB - 6.5 MiB | 4 | 6.60 | 9.87 - 9.85 |
+| Cuckatoo29 | 3, 0-4 | 1,2,4,8 | 11 | 3.3 MiB - 3.3 MiB | 4 | 12.69 | 19.46 - 19.41 |
+| Cuckatoo29 | 3, 0-4 | 1,2,4,8 | 12 | 1.7 MiB - 1.7 MiB | 4 | 24.87 | 38.37 - 38.28 |
+| Cuckatoo29 | 3, 0-4 | 1,2,4,8 | 13 | 866.1 KiB - 868.2 KiB | 4 | 49.25 | 75.67 - 75.48 |
+| Cuckatoo29 | 3, 0-4 | 1,2,4,8 | 14 | 439.1 KiB - 440.2 KiB | 4 | 98.01 | 149.25 - 148.87 |
+| Cuckatoo31 | 3, 0-4 | 1,2,4,8 | 11 | 13.2 MiB - 13.2 MiB | 4 | 12.69 | 19.46 - 19.41 |
+| Cuckatoo31 | 3, 0-4 | 1,2,4,8 | 12 | 6.7 MiB - 6.7 MiB | 4 | 24.87 | 38.37 - 38.28 |
+| Cuckatoo31 | 3, 0-4 | 1,2,4,8 | 13 | 3.4 MiB - 3.4 MiB | 4 | 49.25 | 75.67 - 75.50 |
+| Cuckatoo31 | 3, 0-4 | 1,2,4,8 | 14 | 1.7 MiB - 1.7 MiB | 4 | 98.01 | 149.28 - 148.93 |
+| Cuckatoo31 | 3, 0-4 | 1,2,4,8 | 15 | 938.1 KiB - 940.4 KiB | 4 | 195.54 | 279.44 - 278.76 |
 
 Increasing the amount of threads slightly increases the memory demand, therefore a range is given for the amount of used memory and the corresponding $k_{mem}$ factor.
 
@@ -253,7 +252,7 @@ The following graph shows the average true runtime per proof attempt (nonce test
 ![splean vs. lean runtimes for Cuckatoo29](img/runtimes_29bit.png)
 ![splean vs. lean runtimes for Cuckatoo31](img/runtimes_31bit.png)
 
-As expected from the theoretical analysis, using a higher k-factor (less memory) does not increase the runtime. The splean solver nearly needs to calculate the same amount of Siphashes and also has nearly the same amount of random memory accesses, independent of the memory used. However, the speed up due to parallelization is clearly visible. Using 2 instead of 1 threads roughly halves the runtime. Going from 2 to 4 threads does halve the runtime again. However, using 8 threads does not lead to further improvements on my system. Probably because I have only 6 and not 8 cores.
+As expected from the theoretical analysis, using a higher k-factor (less memory) does not increase the runtime. The splean solver nearly needs to calculate the same amount of Siphashes and also has nearly the same amount of random memory accesses, independent of the memory used. However, the speed up due to parallelization is clearly visible. Using 2 instead of 1 threads roughly halves the runtime. Going from 2 to 4 threads does halve the runtime again. However, using 8 threads does not substantially lead to further improvements on my system. Probably because I have only 6 and not 8 cores.
 
 Finally, the following graphs show the average resulting equivalent runtimes compared to the lean solver approach (error bars show the minimum and maximum values measured for each variant):
 
@@ -262,6 +261,16 @@ Finally, the following graphs show the average resulting equivalent runtimes com
 ![splean vs. lean relative equivalent runtimes for Cuckatoo31](img/splean2lean_31bits.png)
 
 Clearly, the splean solver approach beats the lean solver as demanded by the bounty criteria. However, for a k-factor of $2^{11}$ this is barely the case. Using higher k-factors improves the advantage of the splean solver approach over the lean solver more substantially. Here, the equivalent runtime (taking an allowed slowdown of $10k_{mem}$ for splean solver into account) is only about 80% of the runtime of lean solver. This is a substantial speed up, which should hold also on other systems and for other test setups. Especially, as the parameter used here are not fully optimized but rather contain quite some safety margin and/or where chosen suboptimal (e.g. amount of batches) to allow for faster testing and validation runs. For a fully optimized setup an equivalent runtime of 60% of lean solver seems feasible.
+
+For validation, I determined all solutions using the cuda mean solver on an AWS g6.xlarge instance in the cloud to get all solutions for all 3 seeds within the first 24000 nonces. Then, I determined which of these solutions shall be found by this approach here using a k-factor of $2^{14}$. Afterwards, I run all the according nonces to verify that these solutions were indeed found as expected. The verification was only run with the maximum amount of 8 threads to speed up the process. The following table summarizes the results:
+
+| Approach          | Cycles found | Attempts needed | Average attempts until success | Excess compared to lean solver | Theoretical excess over lean solver | Verified       |
+|-------------------|:------------:|:---------------:|:------------------------------:|:------------------------------:|:-----------------------------------:|:--------------:|
+| splean27x8_k14_t8 | 26           |       68899     |     2649.962                   |      63.094                    |    98.0                             |   26/26 (100%) |
+| splean29x8_k14_t8 | 19           |       50917     |     2679.842                   |      63.806                    |    98.0                             |   19/19 (100%) |
+| splean31x8_k14_t8 | 12           |       48720     |     4060.000                   |      96.667                    |    98.0                             |   12/12 (100%) |
+
+In all cases, the extra attempts needed compared to lean solver (due to starting only with a subset of the edges) is less than what was theoretical predicted. However, this is only the case because the variation is still high, despite 3x24000 = 720000 nonces were tested per bit-variant of Cuckatoo. With these higher memory reduction factors (k > 10) only a small amount of solutions were expected. Running more intensive tests would get more precise values, but already this part took very long time and quite some compute resources.
 
 # Conclusion
 
@@ -307,7 +316,7 @@ $\frac{1}{L}\frac{N^{\underline{L}}}{N^L}\frac{(N^{\underline{\frac{L}{2}}})^2}{
 [^8]: The Cuckoo Cycle Conjecture[^12]: 
  > The fraction $f_i$ of remaining edges after $i$ trimming rounds (in the limit of $N$ goes to infinity) appears to obey: $f_i = {a_i-1} * a_i$, where $a_{-i} = a_0 = 1$, and $a_{i+1} = 1 - e^{-a_i}$. 
 
-[^5]: the key is derived from hashing a blockchain header and a nonce
+[^9]: the key is derived from hashing a blockchain header and a nonce
 
 [^2]: Tromp, J. (2015). Cuckoo Cycle: A Memory Bound Graph-Theoretic Proof-of-Work. In: Brenner, M., Christin, N., Johnson, B., Rohloff, K. (eds) Financial Cryptography and Data Security. FC 2015. Lecture Notes in Computer Science(), vol 8976. Springer, Berlin, Heidelberg. https://doi.org/10.1007/978-3-662-48051-9_4
 
