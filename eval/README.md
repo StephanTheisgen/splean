@@ -258,7 +258,7 @@ to create the files for a quick test and use
 make run_quick_test
 ~~~
 
-to run the test. Output will not be verbose and results will be piped to the console.
+to run the test. The output will not be verbose and results will be piped to the console.
 
 ### How to create and run only a part of the evaluation
 
@@ -266,7 +266,7 @@ However, running the full evaluation takes quite some time. Therefore, one can c
 
  (type)(bits)x(parallel hashes)_k(reduction factor)  
 
-so for example: splean31x8_k10, will execute splean solver approach for Cuckatoo31 using SIMD with 8 Siphash calculations in parallel and a k-factor if 10 (so using only a fraction $\frac{1}{2^{10}}$ of the edges to start with).
+so for example: splean31x8_k10, will execute splean solver approach for Cuckatoo31 using SIMD with 8 Siphash calculations in parallel and a k-factor of 10 (so using only a fraction $\frac{1}{2^{10}}$ of the edges to start with).
 
 To only create all lean solver baseline binary files use
 
@@ -274,37 +274,37 @@ To only create all lean solver baseline binary files use
 make baseline
 ~~~
 
-To make lean solver baseline binaries for a certain Cuckatoo variant with a specified amount of parallel Siphash calculations use for example (for lean solver targeting Cuckatoo27 with 4 Siphashes in parallel)
+To make lean solver baseline binaries for a certain Cuckatoo variant with a specified amount of parallel Siphash calculations, use for example (for lean solver targeting Cuckatoo27 with 4 Siphashes in parallel)
 
 ~~~
 make lean27x4
 ~~~
 
-To run the baseline calculations use
+To run the baseline calculations, use
 
 ~~~
 make eval_bl
 ~~~
 
-To create all splean solver variants use
+To create all splean solver variants, use
 
 ~~~
 make splean
 ~~~
 
-for a particular solver variant use for example (for splean solver targeting Cuckatoo29 with 8 Siphash calculations in parallel):
+for a particular solver variant, use for example (for splean solver targeting Cuckatoo29 with 8 Siphash calculations in parallel):
 
 ~~~
 make splean27x8
 ~~~
   
-To run the evaluations for a part of the splean solver variants use for example (for splean solver targeting Cuckatoo29 with 8 Siphash calculations in parallel):
+To run the evaluations for a part of the splean solver variants, use for example (for splean solver targeting Cuckatoo29 with 8 Siphash calculations in parallel):
 
 ~~~
 make eval_splean27x8
 ~~~
 
-To create the cuda variants of mean solver for the validation process use:
+To create the cuda variants of mean solver for the validation process, use:
 
 ~~~
 make verify

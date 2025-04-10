@@ -1,7 +1,7 @@
 ## Disclaimer
 
 __This is by no means a production ready code!__
-The main purpose of this code is demonstrating that the splean miner approach (explained and evaluated in detail [here](../README.md)) can be turned into reality. It is therefore mostly for educational purpose and so I tried to comment the source code extensively within the files. Otherwise, the code should be pretty self-explanatory.
+The main purpose of this code is demonstrating that the splean solver approach (explained and evaluated in detail [here](../README.md)) can be turned into reality. It is therefore mostly for educational purpose and so I tried to comment the source code extensively within the files. Otherwise, the code should be pretty self-explanatory.
 
 ## Files
 
@@ -11,7 +11,7 @@ In this section I will give a brief summary about each source code file and its 
 
 This file contains the start up and skeleton code. The main function parses the command line arguments. Set up the threads and reserves all the memory (in line 435). It starts a solving attempt by calling the function "solve" on each thread. For better comparison, I kept the input and output format very close to the [lean solver approach from John Tromp](https://github.com/tromp/cuckoo/tree/master/src/cuckatoo).  
    
-The solve function sets up the data structure and runs for each batch the "trim", "walk" and if cycle candidates are found the "check" function.   
+The solve function sets up the data structure and runs for each batch the "trim", "walk" and, if cycle candidates are found, the "check" function.   
 These functions do what their names suggest. They perform the "trim" and "walk" phases of the algorithm as well as checking for cycles.
 
 ### splean.hpp
@@ -30,7 +30,7 @@ It also contains a function called "prune" which prunes the edfges of the tree. 
 
 ### hashmap.hpp
 
-This file contains the implementation of a simple hash-based multimap with linear probing as open addressing method. However, it allows to an amount of slots that is not a power of two. This is crucial for memory efficiency. The hashmap is used by BFS-tree data structure to maintain a list of all current leaf-/end-nodes and their edges.
+This file contains the implementation of a simple hash-based multimap with linear probing as open addressing method. However, it allows for an amount of slots that is not a power of two. This is crucial for memory efficiency. The hashmap is used by the BFS-tree data structure to maintain a list of all current leaf-/end-nodes and their edges.
 
 ### bloom.hpp
 
@@ -46,7 +46,7 @@ The code in this file is based on the file ["siphashxN.h" from John Tromp](https
 
 ### helper.hpp
 
-This file contains some helper function to create Siphash keys and construct the header, as well as a precise timestamp function for time calculations later. Some functions to "siphash"-ing of edges in batches (consecutive and from an edge stream). It also contains
+This file contains some helper function to create Siphash keys and construct the header, as well as a precise timestamp function for time calculations later; and some functions to "siphash"-ing of edges in batches (consecutive and from an edge stream). It also contains
 a function to verify a Cuckatoo cycle, [closely adapted from from John Tromp](https://github.com/tromp/cuckoo/blob/master/src/cuckatoo/cuckatoo.h) to avoid mistakes.
 
 ### other files
