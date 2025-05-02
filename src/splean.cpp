@@ -87,7 +87,7 @@ inline bool verify(uint32_t* solution, const thread_data *data, siphasher& hashe
 	printf("\n");
 	if(verify(solution, hasher)) {
         unsigned char cyclehash[32];
-        blake2b((void *)cyclehash, sizeof(cyclehash), solution, sizeof(solution), 0, 0);
+        blake2b((void *)cyclehash, sizeof(cyclehash), solution, PROOF_SIZE*sizeof(uint32_t), 0, 0);
 		printf("Verified with cyclehash ");
 		for (int i = 0; i < 32; i++) printf("%02x", cyclehash[i]);
 		printf("\n");
